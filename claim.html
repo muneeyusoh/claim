@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ระบบขอรับสวัสดิการชุมชนอัจฉริยะ</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  
+  <style>
+    :root { --fintech-primary: #0A2540; --fintech-accent: #F59E0B; --bg-light: #F7F9FC; }
+    body { background-color: var(--bg-light); font-family: 'Prompt', sans-serif; color: #333; padding-bottom: 30px; }
+    .app-header { background: linear-gradient(135deg, var(--fintech-primary), #1e3a5f); color: white; padding: 30px 20px 50px; text-align: center; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-box { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin: -35px auto 20px; position: relative; border: 1px solid rgba(0,0,0,0.05); max-width: 500px; }
+    .welfare-card { border: 1px solid #E2E8F0; border-radius: 12px; padding: 15px; margin-bottom: 15px; transition: 0.2s; background: #fff; }
+    .welfare-card.eligible { border-left: 4px solid var(--fintech-accent); cursor: pointer; }
+    .welfare-card.eligible:active { background: #fdf6ea; transform: scale(0.98); }
+    .welfare-card.ineligible { border-left: 4px solid #CBD5E1; background: #F8FAFC; opacity: 0.7; }
+    .btn-fintech { background-color: var(--fintech-primary); color: white; border-radius: 10px; padding: 12px; font-weight: 500; border: none; width: 100%; transition: 0.3s; }
+    .badge-status { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; font-weight: 500; }
+    .badge-eligible { background: #dcfce7; color: #166534; }
+    .badge-ineligible { background: #fee2e2; color: #991b1b; }
+    #systemLoading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  </style>
+</head>
+<body>
+
+<div id="systemLoading">
+  <div class="spinner-border mb-3" style="width: 3rem; height: 3rem; color: var(--fintech-accent);" role="status"></div>
+  <p class="text-muted fw-medium">กำลังตรวจสอบสิทธิประโยชน์ของคุณ...</p>
+</div>
+
+<div class="app-header">
+  <h5 class="fw-bold mb-1">ระบบสวัสดิการอัจฉริยะ</h5>
+  <p class="opacity-75 small mb-0">ตรวจสอบสิทธิ์และยื่นคำขอออนไลน์</p>
+</div>
+
+<div class="container">
+  <!-- Section 1: Dashboard สิทธิ์ -->
+  <div class="card-box" id="dashboardSection">
+    <h6 class="fw-bold mb-3 text-primary-custom"><i class="fa-solid fa-shield-heart me-2"></i>เลือกสวัสดิการที่ต้องการเบิก</h6>
+    <div id="welfareList"></div>
+    
+    <hr class="my-4 text-muted">
+    <h6 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการใช้สิทธิ์ปีนี้</h6>
+    <div id="historyList" class="small text-muted"></div>
+  </div>
+
+  <!-- Section 2: Form ยื่นคำขอ (ซ่อนไว้จนกว่าจะกดเลือกสวัสดิการ) -->
+  <div class="card-box" id="claimFormSection" style="display: none;">
+    <button class="btn btn-sm btn-light mb-3 border" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i>กลับ</button>
+    <h6 class="fw-bold text-center" id="selectedWelfareTitle">ชื่อสวัสดิการ</h6>
+    <div class="alert alert-warning py-2 small" id="welfareRequirementInfo"></div>
+    
+    <form id="claimForm" onsubmit="submitClaim(event)">
+      <input type="hidden" id="uid" name="uid">
+      <input type="hidden" id="fullName" name="fullName">
+      <input type="hidden" id="welfareName" name="welfareName">
+      
+      <div class="mb-3">
+        <label class="form-label small text-muted">จำนวนเงินที่ต้องการเบิก</label>
+        <div class="input-group">
+          <input type="number" class="form-control" id="claimAmount" name="claimAmount" required oninput="validateClaimAmount(this)">
+          <span class="input-group-text">บาท</span>
+        </div>
+      </div>
+      
+      <div class="mb-4 bg-light p-3 rounded border">
+        <label class="form-label small fw-bold"><i class="fa-solid fa-file-arrow-up me-1"></i>แนบเอกสารหลักฐาน</label>
+        <input type="file" class="form-control form-control-sm" id="docFile" accept="image/*" required onchange="convertImageToBase64(this)">
+        <input type="hidden" id="docBase64" name="docBase64">
+        <input type="hidden" id="docFileName" name="docFileName">
+      </div>
+      
+      <button type="submit" class="btn btn-fintech" id="submitBtn">ยืนยันการส่งคำขออนุมัติ</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ⚠️ เปลี่ยน LIFF_ID สำหรับหน้า e-Claim ใหม่ของคุณ และวาง GAS_API_URL ล่าสุด
+  const LIFF_ID = "ใส่_LIFF_ID_สวัสดิการตรงนี้"; 
+  const GAS_API_URL = "ใส่_WEB_APP_URL_ล่าสุดตรงนี้"; 
+  
+  let currentMaxClaim = 0;
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        const uid = profile.userId;
+        document.getElementById('uid').value = uid;
+        
+        loadWelfareDashboard(uid);
+      } else {
+        liff.login();
+      }
+    } catch (err) {
+      document.getElementById('systemLoading').innerHTML = `<div class="text-danger text-center"><h6>Error</h6><p class="small">${err.message}</p></div>`;
+    }
+  });
+
+  async function loadWelfareDashboard(uid) {
+    try {
+      const response = await fetch(GAS_API_URL, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "getWelfareDashboard", uid: uid })
+      });
+      const result = await response.json();
+      document.getElementById('systemLoading').style.display = 'none';
+
+      if (result.status === 'success') {
+        document.getElementById('fullName').value = result.memberInfo.fullName;
+        
+        // เรนเดอร์รายการสวัสดิการ
+        const listDiv = document.getElementById('welfareList');
+        listDiv.innerHTML = "";
+        result.welfareRules.forEach(rule => {
+          const isEligible = rule.eligibility === 'eligible';
+          const cardHtml = `
+            <div class="welfare-card ${isEligible ? 'eligible' : 'ineligible'}" ${isEligible ? `onclick="openClaimForm('${rule.welfareName}', ${rule.maxPerClaim}, ${rule.remainingQuota}, '${rule.requiredDocs}')"` : ''}>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <strong class="text-dark">${rule.welfareName}</strong>
+                <span class="badge-status ${isEligible ? 'badge-eligible' : 'badge-ineligible'}">
+                  ${isEligible ? 'มีสิทธิ์เบิก' : 'ไม่เข้าเงื่อนไข'}
+                </span>
+              </div>
+              <div class="small text-muted">วงเงินคงเหลือปีนี้: <strong class="text-dark">${rule.remainingQuota}</strong> บาท</div>
+              ${!isEligible ? `<div class="small text-danger mt-1"><i class="fa-solid fa-circle-info me-1"></i>${rule.reason}</div>` : ''}
+            </div>
+          `;
+          listDiv.innerHTML += cardHtml;
+        });
+
+        // เรนเดอร์ประวัติ
+        const histDiv = document.getElementById('historyList');
+        if (result.claimHistory.length === 0) {
+          histDiv.innerHTML = "<em>ยังไม่มีประวัติการขอรับสวัสดิการในปีนี้</em>";
+        } else {
+          result.claimHistory.forEach(h => {
+            histDiv.innerHTML += `<div class="d-flex justify-content-between py-2 border-bottom"><span>${h.date} - ${h.name}</span><span class="fw-bold">${h.amount} ฿</span></div>`;
+          });
+        }
+      } else {
+        Swal.fire('ข้อผิดพลาด', result.message, 'error').then(() => liff.closeWindow());
+      }
+    } catch (err) {
+      Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+    }
+  }
+
+  function openClaimForm(name, maxPerClaim, remainingQuota, docs) {
+    document.getElementById('dashboardSection').style.display = 'none';
+    document.getElementById('claimFormSection').style.display = 'block';
+    
+    document.getElementById('welfareName').value = name;
+    document.getElementById('selectedWelfareTitle').innerText = name;
+    
+    currentMaxClaim = Math.min(maxPerClaim, remainingQuota);
+    document.getElementById('claimAmount').max = currentMaxClaim;
+    document.getElementById('claimAmount').placeholder = `สูงสุด ${currentMaxClaim} บาท`;
+    
+    document.getElementById('welfareRequirementInfo').innerHTML = `<strong>เอกสารที่ต้องแนบ:</strong> ${docs}`;
+  }
+
+  function goBack() {
+    document.getElementById('claimFormSection').style.display = 'none';
+    document.getElementById('dashboardSection').style.display = 'block';
+  }
+
+  function validateClaimAmount(input) {
+    if (input.value > currentMaxClaim) {
+      input.value = currentMaxClaim;
+      Swal.fire({ toast: true, position: 'top', icon: 'warning', title: `วงเงินสูงสุดที่เบิกได้คือ ${currentMaxClaim} บาท`, showConfirmButton: false, timer: 2000 });
+    }
+  }
+
+  function convertImageToBase64(input) {
+    const file = input.files[0];
+    if (file) {
+      document.getElementById('docFileName').value = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) { document.getElementById('docBase64').value = e.target.result; };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  async function submitClaim(event) {
+    event.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังส่งข้อมูล...';
+    
+    const formData = new FormData(event.target);
+    const dataObj = Object.fromEntries(formData.entries());
+    dataObj.action = "submitClaim";
+
+    try {
+      const response = await fetch(GAS_API_URL, {
+        method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(dataObj)
+      });
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        Swal.fire('สำเร็จ', result.message, 'success').then(() => liff.closeWindow());
+      } else {
+        Swal.fire('แจ้งเตือน', result.message, 'warning');
+        btn.disabled = false; btn.innerText = "ยืนยันการส่งคำขออนุมัติ";
+      }
+    } catch (err) {
+      Swal.fire('ข้อผิดพลาด', 'เซิร์ฟเวอร์ไม่ตอบสนอง', 'error');
+      btn.disabled = false; btn.innerText = "ยืนยันการส่งคำขออนุมัติ";
+    }
+  }
+</script>
+</body>
+</html>
