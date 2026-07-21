@@ -14,18 +14,39 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   
   <style>
-    :root { --fintech-primary: #0A2540; --fintech-accent: #F59E0B; --bg-light: #F7F9FC; }
+    :root { 
+      --fintech-primary: #0A2540; 
+      --fintech-accent: #F59E0B; 
+      --bg-light: #F7F9FC; 
+    }
     body { background-color: var(--bg-light); font-family: 'Prompt', sans-serif; color: #333; padding-bottom: 30px; }
     .app-header { background: linear-gradient(135deg, var(--fintech-primary), #1e3a5f); color: white; padding: 30px 20px 50px; text-align: center; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .card-box { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin: -35px auto 20px; position: relative; border: 1px solid rgba(0,0,0,0.05); max-width: 500px; }
-    .welfare-card { border: 1px solid #E2E8F0; border-radius: 12px; padding: 15px; margin-bottom: 15px; transition: 0.2s; background: #fff; }
+    
+    /* UX/UI: Modern Back Button (Matching contribution.html) */
+    .modern-back-btn { font-size: 0.9rem; font-weight: 500; transition: all 0.2s ease; cursor: pointer; color: #64748B; margin-bottom: 20px; display: inline-flex; align-items: center; text-decoration: none; }
+    .modern-back-btn:hover { color: var(--fintech-primary); transform: translateX(-4px); }
+    .back-icon { background: #F1F5F9; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; color: #64748B; transition: 0.2s; }
+    .modern-back-btn:hover .back-icon { background: #E2E8F0; color: var(--fintech-primary); }
+
+    /* Compact & Clean Welfare Cards */
+    .welfare-card { border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; transition: 0.2s; background: #fff; display: flex; align-items: center; justify-content: space-between; }
     .welfare-card.eligible { border-left: 4px solid var(--fintech-accent); cursor: pointer; }
-    .welfare-card.eligible:active { background: #fdf6ea; transform: scale(0.98); }
-    .welfare-card.ineligible { border-left: 4px solid #CBD5E1; background: #F8FAFC; opacity: 0.7; }
+    .welfare-card.eligible:hover { background: #fdfaf3; border-color: #F59E0B; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(245, 158, 11, 0.1); }
+    .welfare-card.ineligible { border-left: 4px solid #CBD5E1; background: #F8FAFC; opacity: 0.75; }
+    
+    .welfare-icon-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-right: 12px; flex-shrink: 0; }
+    .icon-bg-eligible { background: #FEF3C7; color: #D97706; }
+    .icon-bg-ineligible { background: #F1F5F9; color: #94A3B8; }
+
     .btn-fintech { background-color: var(--fintech-primary); color: white; border-radius: 10px; padding: 12px; font-weight: 500; border: none; width: 100%; transition: 0.3s; }
-    .badge-status { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; font-weight: 500; }
+    .btn-fintech:hover { background-color: #06182c; color: white; }
+    .badge-status { font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; font-weight: 500; }
     .badge-eligible { background: #dcfce7; color: #166534; }
     .badge-ineligible { background: #fee2e2; color: #991b1b; }
+    
+    .form-control, .form-select { border-radius: 10px; border: 1px solid #E2E8F0; background-color: #F8FAFC; padding: 10px 15px; }
+    .form-control:focus { background-color: #fff; border-color: var(--fintech-accent); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1); }
     #systemLoading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
   </style>
 </head>
@@ -40,27 +61,35 @@
   <h5 class="fw-bold mb-1">ระบบสวัสดิการอัจฉริยะ</h5>
   <p class="opacity-75 small mb-0">ตรวจสอบสิทธิ์และยื่นคำขอออนไลน์</p>
 </div>
-<!-- วางไว้ด้านบนสุดของ card-box ในหน้า contribution และ claim -->
-<button class="btn btn-sm btn-light mb-3 border text-muted" onclick="window.location.href='https://liff.line.me/2010764982-RCKkyPZG'">
-  <i class="fa-solid fa-arrow-left me-1"></i>กลับหน้าหลัก
-</button>
   
-<div class="container">
+<div class="container" style="max-width: 500px;">
+  
   <!-- Section 1: Dashboard สิทธิ์ -->
   <div class="card-box" id="dashboardSection">
-    <h6 class="fw-bold mb-3 text-primary-custom"><i class="fa-solid fa-shield-heart me-2"></i>เลือกสวัสดิการที่ต้องการเบิก</h6>
+    
+    <!-- 🔙 ปุ่มกลับหน้าหลัก (Modern UI Redesign) -->
+    <a href="https://liff.line.me/2010764982-RCKkyPZG" class="modern-back-btn">
+      <div class="back-icon"><i class="fa-solid fa-arrow-left"></i></div>
+      <span>กลับหน้าหลัก</span>
+    </a>
+
+    <h6 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-shield-heart me-2 text-warning"></i>เลือกสวัสดิการที่ต้องการเบิก</h6>
     <div id="welfareList"></div>
     
-    <hr class="my-4 text-muted">
-    <h6 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการใช้สิทธิ์ปีนี้</h6>
+    <hr class="my-4 text-muted opacity-25">
+    <h6 class="fw-bold mb-3 small text-secondary"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการใช้สิทธิ์ปีนี้</h6>
     <div id="historyList" class="small text-muted"></div>
   </div>
 
   <!-- Section 2: Form ยื่นคำขอ (ซ่อนไว้จนกว่าจะกดเลือกสวัสดิการ) -->
   <div class="card-box" id="claimFormSection" style="display: none;">
-    <button class="btn btn-sm btn-light mb-3 border" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i>กลับ</button>
-    <h6 class="fw-bold text-center" id="selectedWelfareTitle">ชื่อสวัสดิการ</h6>
-    <div class="alert alert-warning py-2 small" id="welfareRequirementInfo"></div>
+    <div class="modern-back-btn mb-3" onclick="goBack()">
+      <div class="back-icon"><i class="fa-solid fa-arrow-left"></i></div>
+      <span>ย้อนกลับเลือกสวัสดิการ</span>
+    </div>
+
+    <h6 class="fw-bold text-center text-primary mb-3" id="selectedWelfareTitle">ชื่อสวัสดิการ</h6>
+    <div class="alert alert-warning py-2 small mb-3 border-0 bg-warning bg-opacity-10 text-dark" id="welfareRequirementInfo"></div>
     
     <form id="claimForm" onsubmit="submitClaim(event)">
       <input type="hidden" id="uid" name="uid">
@@ -68,18 +97,19 @@
       <input type="hidden" id="welfareName" name="welfareName">
       
       <div class="mb-3">
-        <label class="form-label small text-muted">จำนวนเงินที่ต้องการเบิก</label>
+        <label class="form-label small text-muted fw-medium">จำนวนเงินที่ต้องการเบิก</label>
         <div class="input-group">
           <input type="number" class="form-control" id="claimAmount" name="claimAmount" required oninput="validateClaimAmount(this)">
-          <span class="input-group-text">บาท</span>
+          <span class="input-group-text bg-white text-muted border-start-0">บาท</span>
         </div>
       </div>
       
-      <div class="mb-4 bg-light p-3 rounded border">
-        <label class="form-label small fw-bold"><i class="fa-solid fa-file-arrow-up me-1"></i>แนบเอกสารหลักฐาน</label>
-        <input type="file" class="form-control form-control-sm" id="docFile" accept="image/*" required onchange="convertImageToBase64(this)">
+      <div class="mb-4 bg-light p-3 rounded border border-secondary border-opacity-10">
+        <label class="form-label small fw-bold text-dark"><i class="fa-solid fa-file-arrow-up me-1 text-warning"></i>แนบเอกสารหลักฐาน</label>
+        <input type="file" class="form-control form-control-sm mb-1" id="docFile" accept="image/*" required onchange="convertImageToBase64(this)">
         <input type="hidden" id="docBase64" name="docBase64">
         <input type="hidden" id="docFileName" name="docFileName">
+        <div class="form-text" style="font-size: 0.75rem; color: #94A3B8;">รองรับรูปภาพใบเสร็จหรือใบรับรองแพทย์</div>
       </div>
       
       <button type="submit" class="btn btn-fintech" id="submitBtn">ยืนยันการส่งคำขออนุมัติ</button>
@@ -88,7 +118,6 @@
 </div>
 
 <script>
-  // ⚠️ เปลี่ยน LIFF_ID สำหรับหน้า e-Claim ใหม่ของคุณ และวาง GAS_API_URL ล่าสุด
   const LIFF_ID = "2010764982-opxguAid"; 
   const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyD527QQv1-W_KtMcF6RHVaIfHp7YpjGqZH8nsceaRGZVfiW2FU-hjgQ3gcGVMsPR91/exec"; 
   
@@ -111,6 +140,16 @@
     }
   });
 
+  // ฟังก์ชันเลือกไอคอนอัตโนมัติตามชื่อสวัสดิการ
+  function getWelfareIcon(name) {
+    if (name.includes('ป่วย') || name.includes('รักษา') || name.includes('นอนโรงพยาบาล')) return 'fa-notes-medical';
+    if (name.includes('คลอด') || name.includes('บุตร') || name.includes('กุมาร')) return 'fa-baby';
+    if (name.includes('ศพ') || name.includes('เสียชีวิต') || name.includes('ฌาปนกิจ')) return 'fa-ribbon';
+    if (name.includes('การศึกษา') || name.includes('เรียน') || name.includes('ทุน')) return 'fa-graduation-cap';
+    if (name.includes('180') || name.includes('ผู้สูงอายุ') || name.includes('คนชรา')) return 'fa-hands-holding-child';
+    return 'fa-hand-holding-medical'; // ไอคอนสำรองตั้งต้น
+  }
+
   async function loadWelfareDashboard(uid) {
     try {
       const response = await fetch(GAS_API_URL, {
@@ -123,21 +162,30 @@
       if (result.status === 'success') {
         document.getElementById('fullName').value = result.memberInfo.fullName;
         
-        // เรนเดอร์รายการสวัสดิการ
+        // เรนเดอร์รายการสวัสดิการ (Clean & Compact layout)
         const listDiv = document.getElementById('welfareList');
         listDiv.innerHTML = "";
         result.welfareRules.forEach(rule => {
           const isEligible = rule.eligibility === 'eligible';
+          const iconClass = getWelfareIcon(rule.welfareName);
+          
           const cardHtml = `
             <div class="welfare-card ${isEligible ? 'eligible' : 'ineligible'}" ${isEligible ? `onclick="openClaimForm('${rule.welfareName}', ${rule.maxPerClaim}, ${rule.remainingQuota}, '${rule.requiredDocs}')"` : ''}>
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <strong class="text-dark">${rule.welfareName}</strong>
+              <div class="d-flex align-items-center overflow-hidden">
+                <div class="welfare-icon-box ${isEligible ? 'icon-bg-eligible' : 'icon-bg-ineligible'}">
+                  <i class="fa-solid ${iconClass}"></i>
+                </div>
+                <div class="text-truncate">
+                  <div class="text-dark fw-bold small text-truncate">${rule.welfareName}</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">คงเหลือ: <strong class="text-dark">${rule.remainingQuota}</strong> ฿</div>
+                  ${!isEligible ? `<div class="text-danger text-truncate" style="font-size: 0.7rem;"><i class="fa-solid fa-circle-exclamation me-1"></i>${rule.reason}</div>` : ''}
+                </div>
+              </div>
+              <div class="ms-2 flex-shrink-0">
                 <span class="badge-status ${isEligible ? 'badge-eligible' : 'badge-ineligible'}">
-                  ${isEligible ? 'มีสิทธิ์เบิก' : 'ไม่เข้าเงื่อนไข'}
+                  ${isEligible ? 'มีสิทธิ์เบิก' : 'ไม่ผ่านเกณฑ์'}
                 </span>
               </div>
-              <div class="small text-muted">วงเงินคงเหลือปีนี้: <strong class="text-dark">${rule.remainingQuota}</strong> บาท</div>
-              ${!isEligible ? `<div class="small text-danger mt-1"><i class="fa-solid fa-circle-info me-1"></i>${rule.reason}</div>` : ''}
             </div>
           `;
           listDiv.innerHTML += cardHtml;
@@ -146,10 +194,10 @@
         // เรนเดอร์ประวัติ
         const histDiv = document.getElementById('historyList');
         if (result.claimHistory.length === 0) {
-          histDiv.innerHTML = "<em>ยังไม่มีประวัติการขอรับสวัสดิการในปีนี้</em>";
+          histDiv.innerHTML = "<em class='text-secondary' style='font-size: 0.8rem;'>ยังไม่มีประวัติการขอรับสวัสดิการในปีนี้</em>";
         } else {
           result.claimHistory.forEach(h => {
-            histDiv.innerHTML += `<div class="d-flex justify-content-between py-2 border-bottom"><span>${h.date} - ${h.name}</span><span class="fw-bold">${h.amount} ฿</span></div>`;
+            histDiv.innerHTML += `<div class="d-flex justify-content-between py-1 border-bottom border-light"><span class="text-dark">${h.date} - ${h.name}</span><span class="fw-bold text-success">${h.amount} ฿</span></div>`;
           });
         }
       } else {
@@ -169,9 +217,9 @@
     
     currentMaxClaim = Math.min(maxPerClaim, remainingQuota);
     document.getElementById('claimAmount').max = currentMaxClaim;
-    document.getElementById('claimAmount').placeholder = `สูงสุด ${currentMaxClaim} บาท`;
+    document.getElementById('claimAmount').placeholder = `ระบุไม่เกิน ${currentMaxClaim} บาท`;
     
-    document.getElementById('welfareRequirementInfo').innerHTML = `<strong>เอกสารที่ต้องแนบ:</strong> ${docs}`;
+    document.getElementById('welfareRequirementInfo').innerHTML = `<strong><i class="fa-solid fa-circle-info me-1"></i>เอกสารที่ต้องแนบ:</strong> ${docs}`;
   }
 
   function goBack() {
@@ -212,7 +260,7 @@
       const result = await response.json();
       
       if (result.status === 'success') {
-        Swal.fire('สำเร็จ', result.message, 'success').then(() => liff.closeWindow());
+        Swal.fire('สำเร็จ', result.message, 'success').then(() => window.location.href = 'https://liff.line.me/2010764982-RCKkyPZG');
       } else {
         Swal.fire('แจ้งเตือน', result.message, 'warning');
         btn.disabled = false; btn.innerText = "ยืนยันการส่งคำขออนุมัติ";
